@@ -103,16 +103,6 @@ PacketPulse exposes a set of JSON endpoints to drive the packet sniffer programm
 | **GET** | `/api/packet/<id>` | Fetches deep dissection layers and decoded payload fields. | None |
 | **GET** | `/api/export` | Downloads the current capture buffer as a `.pcap` file. | None |
 
----
-
-## 🎨 Layout Organization
-
-The interface is structured to maximize details on a single screen:
-* **Sidebar**: Hosts the live metrics widgets (total packets, capture rate, and bandwidth), protocol distribution bars, and tabbed IP Talkers tables (Top Sources vs. Top Destinations).
-* **Header Controls**: Quick selectors for interface binding and BPF filters, alongside Start, Stop, and PCAP Export triggers.
-* **IDS Security Console**: A glowing red collapsible bar. If port scanning or cleartext credentials are flagged, it rings the console. Clicking "Locate Packet" jumps directly to the packet in the feed table.
-* **Workspace Pane**:
-  * **Traffic Feed (Top)**: Real-time table sorting incoming packets with color-coded protocol badges (TCP, UDP, DNS, ICMP, ARP). Supports regular expression search.
-  * **Deep Inspector (Bottom)**: Wireshark-style tab panel for inspecting selected packet dissection layers, coordinated hex hover mappings, and parsed payloads.
+----style tab panel for inspecting selected packet dissection layers, coordinated hex hover mappings, and parsed payloads.
 
 ---

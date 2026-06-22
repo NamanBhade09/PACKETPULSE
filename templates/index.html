@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PacketPulse - Deep Packet Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation / Logo / Status -->
+        <aside class="sidebar">
+            <div class="brand">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                <h2>PACKET<span>PULSE</span></h2>
+            </div>
+            
+            <div class="system-status">
+                <div class="status-indicator">
+                    <span class="status-dot" id="status-dot"></span>
+                    <span id="status-text">SYSTEM IDLE</span>
+                </div>
+                <div class="capture-timer" id="capture-timer">00:00:00</div>
+            </div>
+
+            <!-- Live Metrics in Sidebar -->
+            <div class="sidebar-section">
+                <div class="nav-heading">Live Metrics</div>
+                <div class="sidebar-metric-grid">
+                    <div class="sidebar-metric-card">
+                        <span class="sb-metric-label">Total Packets</span>
+                        <span class="sb-metric-value text-cyan" id="metric-total-packets">0</span>
+                    </div>
+                    <div class="sidebar-metric-card">
+                        <span class="sb-metric-label">Data Size</span>
+                        <span class="sb-metric-value text-purple" id="metric-data-size">0.00 B</span>
+                    </div>
+                    <div class="sidebar-metric-card">
+                        <span class="sb-metric-label">Packet Rate</span>
+                        <span class="sb-metric-value text-green" id="metric-packet-rate">0 pps</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-scrollable-area">
+                <!-- Protocol Composition Card -->
+                <div class="sidebar-card">
+                    <h3>Protocol Distribution</h3>
+                    <div class="proto-bars-container" id="proto-distribution">
+                        <div class="empty-state">No packets captured yet</div>
+                    </div>
+                </div>
+
+                <!-- Top Talkers with tabs -->
+                <div class="sidebar-card">
+                    <div class="talker-tabs-header">
+                        <button class="talker-tab-btn active" id="btn-show-src">Top Sources</button>
+                        <button class="talker-tab-btn" id="btn-show-dst">Top Dest</button>
+                    </div>
+                    <div class="talkers-list" id="top-sources">
+                        <div class="empty-state">Waiting for traffic...</div>
+                    </div>
+                    <div class="talkers-list" id="top-destinations" style="display: none;">
+                        <div class="empty-state">Waiting for traffic...</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Top Dashboard Header with Sniffing Controls -->
+            <header class="controls-header">
+                <div class="control-group interface-group">
+                    <label for="interface-select">Network Interface</label>
+                    <select id="interface-select" class="custom-select">
+                        <option value="">Loading interfaces...</option>
+                    </select>
+                </div>
+
+                <div class="control-group filter-group">
+                    <label for="filter-input">Capture Filter (BPF)</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="filter-input" placeholder="e.g. tcp, udp, port 80, icmp" class="custom-input">
+                        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button id="btn-start" class="btn btn-start">
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="btn-icon">
+                            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                        </svg>
+                        Start Capture
+                    </button>
+                    <button id="btn-stop" class="btn btn-stop" disabled>
+                        <svg viewBox="0 0 24 24" fill="currentColor" class="btn-icon">
+                            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+                        </svg>
+                        Stop
+                    </button>
+                    <button id="btn-export" class="btn btn-export" disabled>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="btn-icon">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                        Export PCAP
+                    </button>
+                </div>
+            </header>
+
+            <!-- Intrusion Detection System Alerts Card -->
+            <div class="panel-card security-alerts-panel collapsed" id="alerts-panel">
+                <div class="panel-header alert-header-glow">
+                    <div class="alert-header-title">
+                        <svg class="alert-bell-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/>
+                        </svg>
+                        <h3>IDS Security Alerts Console</h3>
+                        <span class="badge-alert-count" id="alerts-count">0 Alerts</span>
+                    </div>
+                    <button class="btn-toggle-alerts" id="btn-toggle-alerts">Show Alerts</button>
+                </div>
+                <div class="alerts-list-container" id="alerts-list">
+                    <div class="empty-state-alerts">No threats detected. IDS engine monitoring...</div>
+                </div>
+            </div>
+
+            <!-- Main Packet Listing & Deep Dissection Split Pane -->
+            <section class="workspace-grid">
+                <!-- Packet Table Area -->
+                <div class="panel-card packet-list-panel">
+                    <div class="panel-header">
+                        <h3>Live Traffic Feed</h3>
+                        <div class="search-filter-container">
+                            <input type="text" id="packet-search" placeholder="Quick search src/dst/protocol..." class="table-search-input">
+                            <label class="regex-checkbox-label">
+                                <input type="checkbox" id="regex-search-check"> Regex
+                            </label>
+                            <button id="btn-clear" class="btn btn-clear-table">Clear Feed</button>
+                        </div>
+                    </div>
+                    <div class="table-scroll-container">
+                        <table class="packet-table" id="packet-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 80px;">No.</th>
+                                    <th style="width: 120px;">Time</th>
+                                    <th style="width: 220px;">Source Address</th>
+                                    <th style="width: 220px;">Destination Address</th>
+                                    <th style="width: 100px;">Protocol</th>
+                                    <th style="width: 90px;">Length</th>
+                                    <th>Summary</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packet-table-body">
+                                <tr class="placeholder-row">
+                                    <td colspan="7">Click "Start Capture" to record live packets</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Deep Packet Inspector Panel -->
+                <div class="panel-card packet-detail-panel" id="detail-panel">
+                    <div class="panel-header">
+                        <h3>Deep Packet Inspector</h3>
+                        <div class="tab-buttons">
+                            <button class="tab-btn active" data-tab="tab-tree">Dissection Tree</button>
+                            <button class="tab-btn" data-tab="tab-hex">Hex / ASCII Dump</button>
+                            <button class="tab-btn" data-tab="tab-payload">Decoded Payload</button>
+                        </div>
+                    </div>
+                    
+                    <div class="panel-content">
+                        <!-- Empty selection state -->
+                        <div class="detail-empty-state" id="detail-empty-state">
+                            <svg class="inspect-large-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="16" x2="12" y2="12"></line>
+                                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                            </svg>
+                            <p>Select a packet from the traffic feed to run Deep Packet Inspection.</p>
+                        </div>
+
+                        <!-- Tab 1: Dissection Tree -->
+                        <div class="tab-pane active" id="tab-tree">
+                            <div class="tree-container" id="tree-container"></div>
+                        </div>
+
+                        <!-- Tab 2: Hex Dump -->
+                        <div class="tab-pane" id="tab-hex">
+                            <div class="hex-dump-container" id="hex-container"></div>
+                        </div>
+
+                        <!-- Tab 3: Decoded Payload -->
+                        <div class="tab-pane" id="tab-payload">
+                            <div class="decoded-payload-wrapper" id="payload-container-wrapper">
+                                <pre class="decoded-payload-container" id="payload-container"></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

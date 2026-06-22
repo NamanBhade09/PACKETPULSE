@@ -103,6 +103,4 @@ PacketPulse exposes a set of JSON endpoints to drive the packet sniffer programm
 | **GET** | `/api/packet/<id>` | Fetches deep dissection layers and decoded payload fields. | None |
 | **GET** | `/api/export` | Downloads the current capture buffer as a `.pcap` file. | None |
 
-----style tab panel for inspecting selected packet dissection layers, coordinated hex hover mappings, and parsed payloads.
-
----
+----
